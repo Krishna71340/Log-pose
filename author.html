@@ -1,0 +1,326 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Log Pose</title>
+    <style>
+        body {
+            margin: 0;
+            font-family: 'Trebuchet MS', sans-serif;
+            color: #fff;
+            height: 100vh;
+            overflow: hidden;
+            display: flex;
+            flex-direction: column;
+            position: relative;
+        }
+
+        body::before {
+            content: '';
+            position: absolute;
+            top: 0; 
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: url('images/timeline.jpg') no-repeat center center/cover;
+            filter: blur(10px) brightness(0.6);
+            transform: scale(1.1);
+            z-index: -1;
+        }
+
+        nav {
+            text-align: center;
+            padding: 20px;
+            z-index: 100;
+            background: rgba(0,0,0,0.5);
+            backdrop-filter: blur(5px);
+            border-bottom: 2px solid #ffcc00;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            gap: 20px;
+        }
+
+        .nav-logo {
+            height: 50px;
+            width: 50px;
+            object-fit: cover;
+            border-radius: 50%;
+            border: 2px solid #ffcc00;
+            transition: transform 0.5s;
+        }
+
+        .nav-logo:hover {
+            transform: rotate(360deg);
+        }
+
+        nav a {
+            color: #ffcc00;
+            text-decoration: none;
+            font-weight: bold;
+            font-size: 16px;
+            text-transform: uppercase;
+            text-shadow: 0 2px 4px rgba(0,0,0,0.5);
+            transition: 0.3s;
+        }
+
+        nav a:hover, nav a.active { color: #fff; text-shadow: 0 0 10px #ffcc00; }
+
+        .stage {
+            flex-grow: 1;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            perspective: 1000px; 
+            position: relative;
+            gap: 50px;
+        }
+
+        .side-info {
+            width: 300px;
+            color: white;
+            text-shadow: 0 2px 4px rgba(0,0,0,0.8);
+            opacity: 0;
+            transform: translateY(20px);
+            animation: fadeIn 1s forwards 0.5s;
+        }
+
+        .side-info.right {
+            text-align: left;
+        }
+
+        .side-info.left {
+            text-align: right;
+        }
+
+        .side-info h3 {
+            font-size: 2rem;
+            color: #ffcc00;
+            margin-bottom: 10px;
+            text-transform: uppercase;
+            border-bottom: 2px solid #ffcc00;
+            display: inline-block;
+        }
+
+        .side-info p {
+            font-size: 1.1rem;
+            line-height: 1.6;
+            background: rgba(0,0,0,0.6);
+            padding: 15px;
+            border-radius: 10px;
+            border: 1px solid rgba(255,255,255,0.2);
+        }
+
+        .wanted-card {
+            width: 400px;
+            height: 650px;
+            background: #f4e4bc;
+            border-radius: 5px;
+            box-shadow: 0 30px 60px rgba(0,0,0,0.5);
+            padding: 20px;
+            text-align: center;
+            color: #3e2723;
+            transform-style: preserve-3d;
+            transition: transform 0.1s;
+            position: relative;
+            cursor: pointer;
+            z-index: 10;
+            background-image: url('https://www.transparenttextures.com/patterns/aged-paper.png');
+        }
+
+        .wanted-card::before {
+            content: '';
+            position: absolute;
+            top: 0; left: 0; width: 100%; height: 100%;
+            border: 3px solid #3e2723;
+            box-sizing: border-box;
+            opacity: 0.8;
+            pointer-events: none;
+        }
+
+        .wanted-header {
+            font-family: 'Times New Roman', serif;
+            font-size: 4rem;
+            font-weight: 900;
+            margin: 10px 0;
+            transform: translateZ(30px);
+            letter-spacing: 5px;
+            border-bottom: 3px solid #3e2723;
+        }
+
+        .photo-frame {
+            width: 90%;
+            height: 320px;
+            margin: 20px auto;
+            background: #fff;
+            border: 4px solid #3e2723;
+            overflow: hidden;
+            transform: translateZ(20px);
+            position: relative;
+            box-shadow: inset 0 0 20px rgba(0,0,0,0.3);
+        }
+
+        .photo-frame img {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+        }
+
+        .name-label {
+            font-size: 3rem;
+            font-weight: 900;
+            margin: 20px 0 10px 0;
+            text-transform: uppercase;
+            transform: translateZ(40px);
+            font-family: 'Times New Roman', serif;
+        }
+
+        .role-text {
+            font-size: 1.5rem;
+            font-weight: bold;
+            letter-spacing: 3px;
+            transform: translateZ(30px);
+            margin-top: 10px;
+        }
+
+        .footer-text {
+            position: absolute;
+            bottom: 20px;
+            left: 0;
+            width: 100%;
+            font-size: 1.5rem;
+            font-weight: 900;
+            transform: translateZ(20px);
+            opacity: 0.7;
+        }
+
+        .haki-container {
+            position: absolute;
+            width: 120%;
+            height: 120%;
+            top: -10%;
+            left: -10%;
+            pointer-events: none;
+            z-index: 20;
+        }
+
+        .bolt {
+            position: absolute;
+            width: 80px;
+            height: 100%;
+            background-repeat: no-repeat;
+            background-size: contain;
+            opacity: 0;
+        }
+
+        .bolt.left {
+            left: -30px;
+            background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 100 400' xmlns='http://www.w3.org/2000/svg'%3E%3Cpath d='M60 0 L20 150 L50 150 L10 400 L80 180 L40 180 L90 0 Z' fill='%238b0000' stroke='black' stroke-width='3'/%3E%3C/svg%3E");
+            animation: thunderStrike 2s infinite;
+        }
+
+        .bolt.right {
+            right: -30px;
+            background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 100 400' xmlns='http://www.w3.org/2000/svg'%3E%3Cpath d='M40 0 L90 160 L50 160 L100 380 L20 190 L60 190 L10 0 Z' fill='%238b0000' stroke='black' stroke-width='3'/%3E%3C/svg%3E");
+            animation: thunderStrike 2.5s infinite 1s;
+        }
+
+        .bolt.top {
+            top: -120px;
+            left: 45%;
+            width: 120px;
+            height: 400px;
+            transform: rotate(15deg);
+            background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 100 400' xmlns='http://www.w3.org/2000/svg'%3E%3Cpath d='M50 0 L10 120 L40 120 L0 300 L70 140 L30 140 L80 0 Z' fill='black' stroke='%238b0000' stroke-width='2'/%3E%3C/svg%3E");
+            animation: thunderStrike 3s infinite 0.5s;
+        }
+
+        @keyframes thunderStrike {
+            0% { opacity: 0; transform: translateY(-100px) scaleY(0.5); }
+            10% { opacity: 1; transform: translateY(0) scaleY(1); }
+            20% { opacity: 1; }
+            30% { opacity: 0; }
+            100% { opacity: 0; }
+        }
+
+        @keyframes fadeIn {
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+    </style>
+</head>
+<body>
+
+<nav>
+    <img src="logo.png" alt="Logo" class="nav-logo">
+    <a href="index.html">Luffy</a>
+    <a href="timeline.html">Timeline</a>
+    <a href="crew.html">Crew</a>
+    <a href="ships.html">Ships</a>
+    <a href="guide.html">Guide</a>
+    <a href="quiz.html">Quiz</a>
+    <a href="author.html" class="active">Author</a>
+</nav>
+
+<div class="stage">
+    
+    <div class="side-info left">
+        <h3>The Legend</h3>
+        <p>
+            Born in Kumamoto, Japan (1975).
+            Oda decided to become a manga artist at age 4 to avoid getting a "real job".
+            He began One Piece in 1997, expecting it to last 5 years.
+            It has now been running for over 25 years.
+        </p>
+    </div>
+
+    <div class="wanted-card" id="card">
+        
+        <div class="haki-container">
+            <div class="bolt left"></div>
+            <div class="bolt right"></div>
+            <div class="bolt top"></div>
+        </div>
+
+        <div class="wanted-header">WANTED</div>
+
+        <div class="photo-frame">
+            <img src="images/Eichiro.jpg" alt="Eiichiro Oda">
+        </div>
+
+        <h2 class="name-label">EIICHIRO ODA</h2>
+
+        <div class="role-text">THE CREATOR</div>
+
+        <div class="footer-text">MANGA GOD</div>
+    </div>
+
+    <div class="side-info right">
+        <h3>Achievements</h3>
+        <p>
+            Guinness World Record for "Most copies published for the same comic book series by a single author".
+            He famously sleeps only 3 hours a night to keep working.
+            His net worth is estimated at over $200 Million.
+        </p>
+    </div>
+
+</div>
+
+<script src="gear5.js"></script>
+
+<script>
+    const card = document.getElementById('card');
+    const stage = document.querySelector('.stage');
+
+    stage.addEventListener('mousemove', (e) => {
+        const xAxis = (window.innerWidth / 2 - e.pageX) / 25;
+        const yAxis = (window.innerHeight / 2 - e.pageY) / 25;
+        card.style.transform = `rotateY(${xAxis}deg) rotateX(${yAxis}deg)`;
+    });
+
+    stage.addEventListener('mouseleave', () => {
+        card.style.transform = `rotateY(0deg) rotateX(0deg)`;
+    });
+</script>
+</body>
+</html>

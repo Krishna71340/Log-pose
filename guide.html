@@ -1,0 +1,817 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Log Pose</title>
+<style>
+    :root {
+        --primary: #ffcc00;
+        --secondary: #8b0000;
+        --ocean: #2c3e50;
+        --paper: #f4e4bc;
+        --text: #3e2723;
+        --accent: #2980b9;
+        --success: #27ae60;
+    }
+
+    * { box-sizing: border-box; transition: all 0.3s ease; }
+    
+    body {
+        margin: 0;
+        font-family: 'Trebuchet MS', sans-serif;
+        color: #fff;
+        overflow-x: hidden;
+        position: relative;
+        min-height: 100vh;
+    }
+
+    body::before {
+        content: '';
+        position: fixed;
+        top: 0; 
+        left: 0;
+        width: 100%;
+        height: 100%;
+        background: url('images/timeline.jpg') no-repeat center center/cover;
+        filter: blur(10px) brightness(0.6);
+        transform: scale(1.1);
+        z-index: -1;
+    }
+
+    nav {
+        text-align: center;
+        padding: 15px 0;
+        background: rgba(0,0,0,0.6);
+        border-bottom: 2px solid var(--primary);
+        position: relative;
+        z-index: 100;
+        backdrop-filter: blur(5px);
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        gap: 20px;
+    }
+
+    .nav-logo {
+        height: 50px;
+        width: 50px;
+        object-fit: cover;
+        border-radius: 50%;
+        border: 2px solid #ffcc00;
+        transition: transform 0.5s;
+    }
+
+    .nav-logo:hover {
+        transform: rotate(360deg);
+    }
+
+    nav a {
+        color: var(--primary);
+        text-decoration: none;
+        font-weight: bold;
+        font-size: 16px;
+        text-transform: uppercase;
+        position: relative;
+        transition: 0.3s;
+    }
+
+    nav a:hover, nav a.active {
+        text-shadow: 0 0 10px var(--primary);
+        color: #fff;
+    }
+
+    h1, h2, h3 { text-transform: uppercase; letter-spacing: 2px; }
+    
+    .container { max-width: 1000px; margin: 0 auto; padding: 20px; }
+    
+    header {
+        text-align: center;
+        padding: 40px 20px;
+        background: rgba(139, 0, 0, 0.7);
+        color: #fff;
+        border-bottom: 5px solid var(--primary);
+        box-shadow: 0 5px 15px rgba(0,0,0,0.5);
+        position: relative;
+        backdrop-filter: blur(5px);
+        z-index: 50; 
+    }
+
+    header h1 { margin: 0; font-size: 2.5rem; text-shadow: 2px 2px 0 #000; }
+    
+    .spoiler-toggle {
+        position: absolute;
+        top: 20px;
+        right: 20px;
+        background: rgba(0,0,0,0.6);
+        padding: 10px 15px;
+        border-radius: 20px;
+        display: flex;
+        align-items: center;
+        gap: 10px;
+        cursor: pointer;
+        border: 1px solid var(--primary);
+        z-index: 150; 
+    }
+    
+    .switch {
+        position: relative;
+        display: inline-block;
+        width: 40px;
+        height: 20px;
+    }
+    .switch input { opacity: 0; width: 0; height: 0; }
+    .slider {
+        position: absolute;
+        cursor: pointer;
+        top: 0; left: 0; right: 0; bottom: 0;
+        background-color: #ccc;
+        border-radius: 20px;
+        transition: .4s;
+    }
+    .slider:before {
+        position: absolute;
+        content: "";
+        height: 16px;
+        width: 16px;
+        left: 2px;
+        bottom: 2px;
+        background-color: white;
+        border-radius: 50%;
+        transition: .4s;
+    }
+    input:checked + .slider { background-color: var(--primary); }
+    input:checked + .slider:before { transform: translateX(20px); }
+
+    .card-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+        gap: 20px;
+        margin: 40px 0;
+    }
+
+    .path-card {
+        background: var(--paper);
+        padding: 20px;
+        border-radius: 10px;
+        text-align: center;
+        border: 2px solid var(--text);
+        cursor: pointer;
+        box-shadow: 5px 5px 0 rgba(0,0,0,0.5);
+        color: var(--text);
+    }
+    .path-card:hover { transform: translateY(-5px); background: #fff; }
+    .path-card.active { background: var(--primary); border-color: #fff; color: var(--text); }
+
+    .section-box {
+        background: var(--paper);
+        padding: 30px;
+        border-radius: 15px;
+        border: 4px double var(--text);
+        margin-bottom: 40px;
+        color: var(--text);
+        box-shadow: 0 0 20px rgba(0,0,0,0.5);
+        position: relative; 
+    }
+
+    body.spoiler-safe #timeline-container {
+        filter: blur(15px);
+        pointer-events: none;
+        user-select: none;
+    }
+    
+    .spoiler-overlay-msg {
+        display: none;
+        position: absolute;
+        top: 50%; left: 50%;
+        transform: translate(-50%, -50%);
+        background: rgba(0,0,0,0.8);
+        color: var(--primary);
+        padding: 20px 40px;
+        border: 2px solid var(--primary);
+        font-weight: bold;
+        text-transform: uppercase;
+        z-index: 10;
+        text-align: center;
+        border-radius: 10px;
+    }
+
+    body.spoiler-safe .spoiler-overlay-msg { display: block; }
+
+    .saga-item {
+        border-bottom: 1px dashed var(--text);
+        padding: 15px 0;
+    }
+    .saga-header {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        cursor: pointer;
+        font-weight: bold;
+        font-size: 1.2rem;
+    }
+    .saga-header:hover { color: var(--secondary); }
+    
+    .arc-list {
+        display: none;
+        margin-top: 15px;
+        background: rgba(255,255,255,0.5);
+        padding: 10px;
+        border-radius: 5px;
+    }
+    .arc-row {
+        display: flex;
+        justify-content: space-between;
+        padding: 8px;
+        font-size: 0.9rem;
+        border-bottom: 1px solid rgba(0,0,0,0.1);
+    }
+    .tag {
+        font-size: 0.7rem;
+        padding: 2px 6px;
+        border-radius: 4px;
+        color: #fff;
+        text-transform: uppercase;
+    }
+    .tag-canon { background: var(--accent); }
+    .tag-filler { background: #7f8c8d; }
+    .tag-mixed { background: #e67e22; }
+
+    .converter-box {
+        background: #fff;
+        padding: 30px;
+        border-radius: 15px;
+        box-shadow: 0 10px 20px rgba(0,0,0,0.5);
+        margin-bottom: 40px;
+        border: 3px solid var(--primary);
+        color: var(--text);
+    }
+    
+    .mode-tabs { display: flex; gap: 10px; margin-bottom: 20px; }
+    .tab {
+        flex: 1; padding: 10px; text-align: center;
+        background: #eee; cursor: pointer; font-weight: bold; border-radius: 5px;
+        color: var(--text);
+    }
+    .tab.active { background: var(--secondary); color: #fff; }
+
+    .input-group { display: flex; gap: 10px; justify-content: center; }
+    input[type="number"], select {
+        padding: 15px; font-size: 1.2rem;
+        border: 2px solid #ccc; border-radius: 5px;
+    }
+    .convert-btn {
+        padding: 0 30px; background: var(--primary); border: none;
+        font-weight: bold; font-size: 1.2rem; cursor: pointer; border-radius: 5px;
+        color: var(--text);
+    }
+
+    .result-display {
+        margin-top: 20px;
+        padding: 20px;
+        background: var(--paper);
+        border-radius: 10px;
+        min-height: 100px;
+        display: flex;
+        flex-direction: column;
+        justify-content: center;
+        align-items: center;
+        text-align: center;
+        border: 2px dashed var(--text);
+        color: var(--text);
+    }
+    .result-main { font-size: 1.5rem; font-weight: bold; color: var(--secondary); margin-bottom: 5px; }
+    .result-sub { font-size: 1rem; opacity: 0.8; }
+
+    .progress-container {
+        width: 100%;
+        background-color: #ddd;
+        border-radius: 10px;
+        margin: 15px 0;
+        height: 25px;
+        border: 1px solid var(--text);
+        overflow: hidden;
+    }
+    .progress-bar {
+        height: 100%;
+        background-color: var(--success);
+        width: 0%;
+        text-align: center;
+        line-height: 25px;
+        color: white;
+        transition: width 0.5s;
+        font-weight: bold;
+        font-size: 0.8rem;
+    }
+
+    .calc-box {
+        background: rgba(41, 128, 185, 0.9);
+        color: #fff;
+        padding: 30px;
+        border-radius: 15px;
+        margin-bottom: 40px;
+        border: 2px solid #fff;
+    }
+    .calc-inputs { display: grid; grid-template-columns: 1fr 1fr; gap: 20px; margin-bottom: 20px; }
+    .calc-inputs label { display: block; margin-bottom: 5px; font-size: 0.9rem; }
+    .calc-inputs input { width: 100%; padding: 10px; border-radius: 5px; border: none; color: #333; }
+    
+    .calc-result { font-size: 1.2rem; font-weight: bold; text-align: center; background: rgba(0,0,0,0.3); padding: 15px; border-radius: 10px;}
+
+    .tips-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 15px; }
+    .tip-card { 
+        background: rgba(0, 0, 0, 0.6); 
+        padding: 15px; 
+        border-left: 4px solid var(--primary); 
+        color: #fff;
+        backdrop-filter: blur(5px);
+    }
+
+    footer { text-align: center; padding: 40px; color: rgba(255,255,255,0.7); font-size: 0.8rem; }
+
+    .modal-overlay {
+        position: fixed; top: 0; left: 0; width: 100%; height: 100%;
+        background: rgba(0,0,0,0.9); z-index: 2000;
+        display: flex; justify-content: center; align-items: center;
+    }
+    .modal-content {
+        background: var(--paper); color: var(--text);
+        padding: 40px; border-radius: 10px; border: 5px solid var(--primary);
+        text-align: center; max-width: 500px; width: 90%;
+        box-shadow: 0 0 50px rgba(0,0,0,1);
+    }
+    .modal-btn {
+        margin-top: 20px; padding: 15px 30px;
+        background: var(--secondary); color: #fff;
+        border: none; font-size: 1.2rem; font-weight: bold;
+        cursor: pointer; border-radius: 5px;
+    }
+
+    @media (max-width: 600px) {
+        .calc-inputs { grid-template-columns: 1fr; }
+        .input-group { flex-direction: column; }
+    }
+</style>
+</head>
+<body class="spoiler-safe">
+
+<div class="modal-overlay" id="spoilerModal">
+    <div class="modal-content">
+        <h2 style="color: var(--secondary); text-transform: uppercase;">⚠️ Spoiler Warning ⚠️</h2>
+        <p style="font-size: 1.1rem; line-height: 1.5;">
+            This guide covers the entire One Piece story up to the latest arc. 
+            To protect new viewers, the <strong>Timeline is blurred</strong> by default.
+        </p>
+        <p>You can reveal it anytime using the toggle in the top right corner.</p>
+        <button class="modal-btn" onclick="closeModal()">I Understand</button>
+    </div>
+</div>
+
+<nav>
+    <img src="logo.png" alt="Logo" class="nav-logo">
+    <a href="index.html">Luffy</a>
+    <a href="timeline.html">Timeline</a>
+    <a href="crew.html">Crew</a>
+    <a href="ships.html">Ships</a>
+    <a href="guide.html" class="active">Guide</a>
+    <a href="quiz.html">Quiz</a>
+    <a href="author.html">Author</a>
+</nav>
+
+<header>
+    <div class="spoiler-toggle">
+        <label class="switch">
+            <input type="checkbox" checked id="spoilerCheck">
+            <span class="slider"></span>
+        </label>
+        <span style="font-size: 0.8rem; font-weight: bold;">SPOILER SAFE</span>
+    </div>
+    <h1>Your One Piece Journey</h1>
+    <p>The Ultimate Watch & Read Guide</p>
+</header>
+
+<div class="container">
+
+    <section id="choose-path">
+        <div class="card-grid">
+            <div class="path-card" onclick="setMode('new')">I'm New Here<br><small>Start from Ep 1</small></div>
+            <div class="path-card" onclick="setMode('anime')">Anime Only<br><small>Episode Guide</small></div>
+            <div class="path-card" onclick="setMode('manga')">Manga Reader<br><small>Chapter Guide</small></div>
+            <div class="path-card" onclick="setMode('fast')">Fast Watch<br><small>No Filler</small></div>
+        </div>
+    </section>
+
+    <section class="section-box" id="tracker-section">
+        <h2 style="text-align:center; border-bottom: 2px solid var(--text); padding-bottom:10px;">Where Am I Now?</h2>
+        <div class="input-group">
+            <select id="track-type">
+                <option value="ep">Episode</option>
+                <option value="ch">Chapter</option>
+            </select>
+            <input type="number" id="track-input" placeholder="Current #">
+            <button class="convert-btn" onclick="updateTracker()">TRACK</button>
+        </div>
+        
+        <div id="tracker-result" style="display: none; text-align: center; margin-top: 20px;">
+            <div style="font-size: 1.5rem; font-weight: bold; color: var(--secondary);" id="track-arc-name"></div>
+            <div style="font-size: 1rem; margin-bottom: 10px;" id="track-saga-name"></div>
+            <div class="progress-container">
+                <div class="progress-bar" id="track-bar">0%</div>
+            </div>
+            <div style="font-style: italic; opacity: 0.8;" id="track-next"></div>
+        </div>
+    </section>
+
+    <section class="section-box" style="position: relative;">
+        <h2 style="text-align:center; border-bottom: 2px solid var(--text); padding-bottom:10px;">Saga Timeline</h2>
+        
+        <div class="spoiler-overlay-msg">
+            Spoiler Mode Active<br>Turn off toggle to view
+        </div>
+
+        <div id="timeline-container">
+        </div>
+    </section>
+
+    <section class="converter-box" id="converter">
+        <h2 style="text-align:center;">Log Pose Converter</h2>
+        <div class="mode-tabs">
+            <div class="tab active" id="tab-anime" onclick="switchConvMode('anime')">Anime ⮕ Manga</div>
+            <div class="tab" id="tab-manga" onclick="switchConvMode('manga')">Manga ⮕ Anime</div>
+        </div>
+        
+        <div class="input-group">
+            <input type="number" id="conv-input" placeholder="Enter Episode Number...">
+            <button class="convert-btn" onclick="convert()">FIND</button>
+        </div>
+
+        <div class="result-display" id="conv-result">
+            <div style="opacity: 0.5;">Enter a number above to set sail...</div>
+        </div>
+    </section>
+
+    <section class="calc-box">
+        <h2 style="margin-top:0;">Time to Catch Up</h2>
+        <div class="calc-inputs">
+            <div>
+                <label>Episodes/Chapters per Day</label>
+                <input type="number" id="calc-rate" value="3" oninput="calculateTime()">
+            </div>
+            <div>
+                <label>Days per Week</label>
+                <input type="number" id="calc-days" value="7" max="7" oninput="calculateTime()">
+            </div>
+        </div>
+        <div class="calc-result" id="calc-output">
+            Calculate your journey...
+        </div>
+    </section>
+
+    <section>
+        <h2 style="color: #fff; margin-bottom: 20px; text-shadow: 2px 2px 4px #000;">Captain's Orders (Tips)</h2>
+        <div class="tips-grid">
+            <div class="tip-card">
+                <strong>Don't Skip Skypiea</strong><br>
+                It embodies the spirit of adventure and has crucial lore.
+            </div>
+            <div class="tip-card">
+                <strong>Read the Manga Cover Stories</strong><br>
+                The anime often skips these, but they are canon canon side-stories.
+            </div>
+            <div class="tip-card">
+                <strong>Use "One Pace"</strong><br>
+                If pacing gets too slow (esp. Dressrosa), try the fan edit.
+            </div>
+            <div class="tip-card">
+                <strong>Avoid Wikis</strong><br>
+                Spoilers are everywhere. Use this guide instead!
+            </div>
+        </div>
+    </section>
+
+</div>
+
+<footer>
+    Created for the Grand Line • To be continued...
+</footer>
+
+<script>
+    const DB = [
+        {
+            saga: "East Blue",
+            arcs: [
+                { name: "Romance Dawn", type: "Canon", ep: [1,3], ch: [1,7], desc: "Luffy sets sail." },
+                { name: "Orange Town", type: "Canon", ep: [4,8], ch: [8,21], desc: "Meet Nami & Buggy." },
+                { name: "Syrup Village", type: "Canon", ep: [9,18], ch: [22,41], desc: "Meet Usopp." },
+                { name: "Baratie", type: "Canon", ep: [19,30], ch: [42,68], desc: "Meet Sanji." },
+                { name: "Arlong Park", type: "Must Watch", ep: [31,44], ch: [69,95], desc: "Nami's past." },
+                { name: "Loguetown", type: "Canon", ep: [45,53], ch: [96,100], desc: "The beginning and the end." },
+                { name: "Warship Island", type: "Filler", ep: [54,61], ch: null, desc: "Apis and the dragon." }
+            ]
+        },
+        {
+            saga: "Alabasta",
+            arcs: [
+                { name: "Reverse Mountain", type: "Canon", ep: [62,63], ch: [101,105], desc: "Entering Grand Line." },
+                { name: "Whisky Peak", type: "Canon", ep: [64,67], ch: [106,114], desc: "Bounty Hunters." },
+                { name: "Little Garden", type: "Canon", ep: [70,77], ch: [115,129], desc: "Giants." },
+                { name: "Drum Island", type: "Must Watch", ep: [78,91], ch: [130,154], desc: "Meet Chopper." },
+                { name: "Alabasta", type: "Must Watch", ep: [92,130], ch: [155,217], desc: "Crocodile & Civil War." },
+                { name: "Post-Alabasta", type: "Filler", ep: [131,135], ch: null, desc: "Crew antics." },
+                { name: "Goat Island", type: "Filler", ep: [136,138], ch: null, desc: "Zenny." },
+                { name: "Ruluka Island", type: "Filler", ep: [139,143], ch: null, desc: "Rainbow Mist." }
+            ]
+        },
+        {
+            saga: "Sky Island",
+            arcs: [
+                { name: "Jaya", type: "Canon", ep: [144,152], ch: [218,236], desc: "Mock Town & Blackbeard." },
+                { name: "Skypiea", type: "Canon", ep: [153,195], ch: [237,302], desc: "Adventure in the sky." },
+                { name: "G-8", type: "Filler (Good)", ep: [196,206], ch: null, desc: "Best filler arc." }
+            ]
+        },
+        {
+            saga: "Water 7",
+            arcs: [
+                { name: "Long Ring Long Land", type: "Mixed", ep: [207,219], ch: [303,321], desc: "Davy Back Fight." },
+                { name: "Ocean's Dream", type: "Filler", ep: [220,224], ch: null, desc: "Memory Loss." },
+                { name: "Foxy's Return", type: "Filler", ep: [225,226], ch: null, desc: "Foxy Again." },
+                { name: "Water 7", type: "Must Watch", ep: [227,263], ch: [322,374], desc: "Crew conflict & CP9." },
+                { name: "Enies Lobby", type: "Must Watch", ep: [264,312], ch: [375,430], desc: "Rescue Robin." },
+                { name: "Post-Enies Lobby", type: "Canon", ep: [313,325], ch: [431,441], desc: "New ship & bounties." },
+                { name: "Ice Hunter", type: "Filler", ep: [326,335], ch: null, desc: "Bounty Hunters." }
+            ]
+        },
+        {
+            saga: "Thriller Bark",
+            arcs: [
+                { name: "Thriller Bark", type: "Canon", ep: [337,381], ch: [442,489], desc: "Zombies & Brook." },
+                { name: "Spa Island", type: "Filler", ep: [382,384], ch: null, desc: "Relaxation." }
+            ]
+        },
+        {
+            saga: "Summit War",
+            arcs: [
+                { name: "Sabaody Archipelago", type: "Must Watch", ep: [385,405], ch: [490,513], desc: "Worst Generation." },
+                { name: "Amazon Lily", type: "Canon", ep: [408,417], ch: [514,524], desc: "Boa Hancock." },
+                { name: "Impel Down", type: "Canon", ep: [422,452], ch: [525,549], desc: "Prison Break." },
+                { name: "Straw Hat Separation", type: "Filler", ep: [453,456], ch: null, desc: "Crew locations." },
+                { name: "Marineford", type: "Must Watch", ep: [457,489], ch: [550,580], desc: "War of the Best." },
+                { name: "Post-War", type: "Canon", ep: [490,516], ch: [581,597], desc: "Luffy's past." }
+            ]
+        },
+        {
+            saga: "Fish-Man Island",
+            arcs: [
+                { name: "Return to Sabaody", type: "Canon", ep: [517,522], ch: [598,602], desc: "2 Years Later." },
+                { name: "Fish-Man Island", type: "Canon", ep: [523,574], ch: [603,653], desc: "Undersea adventure." },
+                { name: "Z's Ambition", type: "Filler", ep: [575,578], ch: null, desc: "Movie tie-in." }
+            ]
+        },
+        {
+            saga: "Dressrosa",
+            arcs: [
+                { name: "Punk Hazard", type: "Canon", ep: [579,625], ch: [654,699], desc: "Law Alliance." },
+                { name: "Caesar Retrieval", type: "Filler", ep: [626,628], ch: null, desc: "Kung Fu Dugong." },
+                { name: "Dressrosa", type: "Canon", ep: [629,746], ch: [700,801], desc: "Doflamingo." },
+                { name: "Silver Mine", type: "Filler", ep: [747,750], ch: null, desc: "Bartolomeo." }
+            ]
+        },
+        {
+            saga: "Four Emperors",
+            arcs: [
+                { name: "Zou", type: "Canon", ep: [751,779], ch: [802,822], desc: "Minks & Poneglyphs." },
+                { name: "Marine Rookie", type: "Filler", ep: [780,782], ch: null, desc: "Luffy eats curry." },
+                { name: "Whole Cake Island", type: "Canon", ep: [783,877], ch: [823,902], desc: "Sanji's Wedding." },
+                { name: "Reverie", type: "Canon", ep: [878,889], ch: [903,908], desc: "World Meeting." },
+                { name: "Wano Country", type: "Must Watch", ep: [890,1085], ch: [909,1057], desc: "Samurai & Kaido." }
+            ]
+        },
+        {
+            saga: "Final Saga",
+            arcs: [
+                { name: "Uta's Past", type: "Filler", ep: [1029,1030], ch: null, desc: "Film Red tie-in." },
+                { name: "Egghead", type: "Canon", ep: [1086, 1122], ch: [1058, 1124], desc: "Future Island (Ongoing)." },
+                { name: "Elbaf", type: "Canon", ep: [1123, 1155], ch: [1125, 1170], desc: "Land of Giants (Manga)." }
+            ]
+        }
+    ];
+
+    const TOTAL_EPISODES = 1155;
+    const TOTAL_CHAPTERS = 1170;
+
+    const timelineContainer = document.getElementById('timeline-container');
+    const spoilerToggle = document.getElementById('spoilerCheck');
+    let convMode = 'anime';
+
+    function init() {
+        if(!localStorage.getItem('spoilerSeen')) {
+            document.getElementById('spoilerModal').style.display = 'flex';
+        }
+        
+        spoilerToggle.checked = true;
+        document.body.classList.add('spoiler-safe');
+
+        renderTimeline();
+        
+        spoilerToggle.addEventListener('change', (e) => {
+            console.log("Toggle changed to:", e.target.checked);
+            document.body.classList.toggle('spoiler-safe', e.target.checked);
+        });
+
+        calculateTime();
+        loadTracker();
+    }
+
+    function closeModal() {
+        document.getElementById('spoilerModal').style.display = 'none';
+        localStorage.setItem('spoilerSeen', 'true');
+    }
+
+    function renderTimeline() {
+        let html = '';
+        DB.forEach((saga, index) => {
+            html += `
+            <div class="saga-item">
+                <div class="saga-header" onclick="toggleArcList(this)">
+                    <span class="saga-name">${saga.saga}</span>
+                    <span style="font-size:0.8rem; opacity:0.7;">▼</span>
+                </div>
+                <div class="arc-list">
+                    ${saga.arcs.map(arc => `
+                        <div class="arc-row">
+                            <div>
+                                <strong class="arc-title">${arc.name}</strong>
+                                <div style="font-size:0.8rem; opacity:0.8; margin-top:2px;">
+                                    📺 ${rangeStr(arc.ep)} | 📖 ${rangeStr(arc.ch)}
+                                </div>
+                                <div style="font-size:0.8rem; font-style:italic; margin-top:2px;">${arc.desc}</div>
+                            </div>
+                            <div><span class="tag tag-${arc.type.split(' ')[0].toLowerCase()}">${arc.type}</span></div>
+                        </div>
+                    `).join('')}
+                </div>
+            </div>`;
+        });
+        timelineContainer.innerHTML = html;
+    }
+
+    function rangeStr(arr) {
+        if (!arr) return "N/A";
+        return arr[0] === arr[1] ? arr[0] : `${arr[0]}-${arr[1]}`;
+    }
+
+    function toggleArcList(header) {
+        const list = header.nextElementSibling;
+        list.style.display = list.style.display === 'block' ? 'none' : 'block';
+        header.children[1].textContent = list.style.display === 'block' ? '▲' : '▼';
+    }
+
+    function switchConvMode(mode) {
+        convMode = mode;
+        document.getElementById('tab-anime').classList.toggle('active', mode === 'anime');
+        document.getElementById('tab-manga').classList.toggle('active', mode === 'manga');
+        document.getElementById('conv-input').placeholder = mode === 'anime' ? "Enter Episode Number..." : "Enter Chapter Number...";
+        document.getElementById('conv-input').value = "";
+        document.getElementById('conv-result').innerHTML = '<div style="opacity:0.5;">Enter a number above...</div>';
+    }
+
+    function convert() {
+        const input = parseInt(document.getElementById('conv-input').value);
+        if (!input) return;
+
+        let found = null;
+        let resultMain = "";
+        let resultSub = "";
+
+        for (const saga of DB) {
+            for (const arc of saga.arcs) {
+                const range = convMode === 'anime' ? arc.ep : arc.ch;
+                if (range && input >= range[0] && input <= range[1]) {
+                    found = { saga: saga.saga, arc: arc };
+                    break;
+                }
+            }
+            if (found) break;
+        }
+
+        if (found) {
+            if (convMode === 'anime') {
+                if (found.arc.ch) {
+                    const epProgress = (input - found.arc.ep[0]) / (found.arc.ep[1] - found.arc.ep[0] || 1);
+                    const chCount = found.arc.ch[1] - found.arc.ch[0];
+                    const approxCh = Math.round(found.arc.ch[0] + (chCount * epProgress));
+                    
+                    resultMain = `Read Chapter ${approxCh}`;
+                    resultSub = `In Arc: ${found.arc.name} (Saga: ${found.saga})`;
+                } else {
+                    resultMain = "Filler Episode";
+                    resultSub = "No manga chapter corresponds to this episode.";
+                }
+            } else {
+                const chProgress = (input - found.arc.ch[0]) / (found.arc.ch[1] - found.arc.ch[0] || 1);
+                const epCount = found.arc.ep[1] - found.arc.ep[0];
+                const approxEp = Math.round(found.arc.ep[0] + (epCount * chProgress));
+                
+                resultMain = `Watch Episode ${approxEp}`;
+                resultSub = `In Arc: ${found.arc.name} (Saga: ${found.saga})`;
+            }
+        } else {
+            resultMain = "Not Found";
+            resultSub = "That number hasn't been adapted or doesn't exist yet.";
+        }
+
+        document.getElementById('conv-result').innerHTML = `
+            <div class="result-main">${resultMain}</div>
+            <div class="result-sub">${resultSub}</div>
+        `;
+    }
+
+    function updateTracker() {
+        const type = document.getElementById('track-type').value;
+        const val = parseInt(document.getElementById('track-input').value);
+        if(!val) return;
+
+        localStorage.setItem('op_tracker', JSON.stringify({ type: type, val: val }));
+        
+        let foundSaga = "Unknown";
+        let foundArc = "Unknown";
+        let nextArc = "Unknown";
+        
+        for(let i=0; i<DB.length; i++) {
+            for(let j=0; j<DB[i].arcs.length; j++) {
+                const arc = DB[i].arcs[j];
+                const range = type === 'ep' ? arc.ep : arc.ch;
+                
+                if(range && val >= range[0] && val <= range[1]) {
+                    foundSaga = DB[i].saga;
+                    foundArc = arc.name;
+                    
+                    if(j+1 < DB[i].arcs.length) nextArc = DB[i].arcs[j+1].name;
+                    else if(i+1 < DB.length) nextArc = DB[i+1].arcs[0].name;
+                    else nextArc = "Caught Up!";
+                    break;
+                }
+            }
+            if(foundArc !== "Unknown") break;
+        }
+
+        document.getElementById('tracker-result').style.display = 'block';
+        document.getElementById('track-arc-name').innerText = foundArc;
+        document.getElementById('track-saga-name').innerText = foundSaga;
+        document.getElementById('track-next').innerText = "Next: " + nextArc;
+
+        const total = type === 'ep' ? TOTAL_EPISODES : TOTAL_CHAPTERS;
+        const percent = Math.min(100, Math.round((val / total) * 100));
+        document.getElementById('track-bar').style.width = percent + "%";
+        document.getElementById('track-bar').innerText = percent + "%";
+    }
+
+    function loadTracker() {
+        const data = localStorage.getItem('op_tracker');
+        if(data) {
+            const parsed = JSON.parse(data);
+            document.getElementById('track-type').value = parsed.type;
+            document.getElementById('track-input').value = parsed.val;
+            updateTracker();
+        }
+    }
+
+    function calculateTime() {
+        const rate = parseFloat(document.getElementById('calc-rate').value) || 0;
+        const days = parseFloat(document.getElementById('calc-days').value) || 0;
+        
+        if (rate <= 0 || days <= 0) {
+            document.getElementById('calc-output').textContent = "Please enter valid numbers.";
+            return;
+        }
+
+        const weeklyRate = rate * days;
+        const weeksNeeded = TOTAL_EPISODES / weeklyRate;
+        const months = (weeksNeeded / 4.3).toFixed(1);
+        const years = (weeksNeeded / 52).toFixed(1);
+
+        let msg = `You will catch up in approx <strong>${months} months</strong>.`;
+        if (weeksNeeded > 52) msg += ` (That's ${years} years!)`;
+        
+        document.getElementById('calc-output').innerHTML = msg;
+    }
+
+    function setMode(mode) {
+        if (mode === 'manga') {
+            switchConvMode('manga');
+            document.getElementById('converter').scrollIntoView({behavior: 'smooth'});
+        } else if (mode === 'anime') {
+            switchConvMode('anime');
+            document.getElementById('converter').scrollIntoView({behavior: 'smooth'});
+        } else {
+            document.querySelector('.timeline-section').scrollIntoView({behavior: 'smooth'});
+        }
+    }
+
+    init();
+
+</script>
+<script src="gear5.js"></script>
+</body>
+</html>

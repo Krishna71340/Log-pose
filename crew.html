@@ -1,0 +1,379 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Log Pose</title>
+    <style>
+        body {
+            margin: 0;
+            font-family: 'Trebuchet MS', sans-serif;
+            background: url('images/timeline.jpg') no-repeat center center/cover;
+            background-attachment: fixed;
+            color: #fff;
+            overflow-x: hidden;
+        }
+
+        .overlay {
+            background: rgba(0,0,0,0.9);
+            min-height: 100vh;
+            padding: 40px 20px;
+        }
+
+        nav {
+            text-align: center;
+            margin-bottom: 40px;
+            position: sticky;
+            top: 0;
+            z-index: 100;
+            background: rgba(0,0,0,0.95);
+            padding: 15px;
+            border-bottom: 2px solid #ffcc00;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            gap: 20px;
+        }
+
+        .nav-logo {
+            height: 50px;
+            width: 50px;
+            object-fit: cover;
+            border-radius: 50%;
+            border: 2px solid #ffcc00;
+            transition: transform 0.5s;
+        }
+
+        .nav-logo:hover {
+            transform: rotate(360deg);
+        }
+
+        nav a {
+            color: #ffcc00;
+            text-decoration: none;
+            font-weight: bold;
+            font-size: 16px;
+            text-transform: uppercase;
+            transition: color 0.3s;
+        }
+
+        nav a:hover, nav a.active {
+            color: #fff;
+            text-shadow: 0 0 10px #ffcc00;
+        }
+
+        h1 {
+            text-align: center;
+            color: #ffcc00;
+            font-size: 3.5rem;
+            margin-bottom: 30px;
+            text-shadow: 4px 4px 0 #8b0000;
+            text-transform: uppercase;
+            letter-spacing: 5px;
+        }
+
+        .filter-container {
+            display: flex;
+            justify-content: center;
+            gap: 15px;
+            margin-bottom: 50px;
+            flex-wrap: wrap;
+        }
+
+        .filter-btn {
+            background: transparent;
+            border: 2px solid #ffcc00;
+            color: #ffcc00;
+            padding: 10px 25px;
+            font-size: 1rem;
+            font-weight: bold;
+            cursor: pointer;
+            border-radius: 30px;
+            transition: all 0.3s;
+            text-transform: uppercase;
+        }
+
+        .filter-btn:hover, .filter-btn.active {
+            background: #ffcc00;
+            color: #000;
+            box-shadow: 0 0 15px #ffcc00;
+        }
+
+        .crew-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+            gap: 40px;
+            max-width: 1400px;
+            margin: auto;
+            padding: 20px;
+        }
+
+        .card {
+            background: #2c3e50;
+            border-radius: 15px;
+            overflow: hidden;
+            position: relative;
+            transform-style: preserve-3d;
+            perspective: 1000px;
+            opacity: 0;
+            animation: popIn 0.6s ease-out forwards;
+            box-shadow: 0 10px 20px rgba(0,0,0,0.5);
+            transition: transform 0.1s; 
+        }
+
+        .card-inner {
+            padding: 0;
+            display: flex;
+            flex-direction: column;
+            height: 100%;
+        }
+
+        .img-wrapper {
+            height: 350px;
+            overflow: hidden;
+            position: relative;
+            border-bottom: 4px solid #ffcc00;
+        }
+
+        .img-wrapper img {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+            transition: transform 0.5s;
+        }
+
+        .card:hover .img-wrapper img {
+            transform: scale(1.1);
+        }
+
+        .card-content {
+            padding: 20px;
+            text-align: center;
+            background: linear-gradient(to bottom, #2c3e50, #000);
+            flex-grow: 1;
+            position: relative;
+            z-index: 2;
+        }
+
+        .card h2 {
+            margin: 0;
+            font-size: 2rem;
+            color: #fff;
+            text-transform: uppercase;
+        }
+
+        .role {
+            font-style: italic;
+            color: #ffcc00;
+            font-weight: bold;
+            margin: 10px 0;
+            font-size: 1.1rem;
+        }
+
+        .desc {
+            font-size: 0.95rem;
+            color: #bdc3c7;
+            line-height: 1.5;
+        }
+
+        .card[data-char="luffy"]:hover { box-shadow: 0 0 30px rgba(255, 0, 0, 0.6); border: 1px solid red; }
+        .card[data-char="zoro"]:hover { box-shadow: 0 0 30px rgba(0, 255, 0, 0.6); border: 1px solid green; }
+        .card[data-char="nami"]:hover { box-shadow: 0 0 30px rgba(255, 165, 0, 0.6); border: 1px solid orange; }
+        .card[data-char="usopp"]:hover { box-shadow: 0 0 30px rgba(255, 255, 0, 0.6); border: 1px solid yellow; }
+        .card[data-char="sanji"]:hover { box-shadow: 0 0 30px rgba(0, 0, 255, 0.6); border: 1px solid blue; }
+        .card[data-char="chopper"]:hover { box-shadow: 0 0 30px rgba(255, 192, 203, 0.6); border: 1px solid pink; }
+        .card[data-char="robin"]:hover { box-shadow: 0 0 30px rgba(128, 0, 128, 0.6); border: 1px solid purple; }
+        .card[data-char="franky"]:hover { box-shadow: 0 0 30px rgba(0, 255, 255, 0.6); border: 1px solid cyan; }
+        .card[data-char="brook"]:hover { box-shadow: 0 0 30px rgba(255, 255, 255, 0.6); border: 1px solid white; }
+        .card[data-char="jinbe"]:hover { box-shadow: 0 0 30px rgba(0, 100, 255, 0.6); border: 1px solid darkblue; }
+
+        @keyframes popIn {
+            from { opacity: 0; transform: translateY(50px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+    </style>
+</head>
+<body>
+
+<div class="overlay">
+
+    <nav>
+        <img src="logo.png" alt="Logo" class="nav-logo">
+        <a href="index.html">Luffy</a>
+        <a href="timeline.html">Timeline</a>
+        <a href="crew.html" class="active">Crew</a>
+        <a href="ships.html">Ships</a>
+        <a href="guide.html">Guide</a>
+        <a href="quiz.html">Quiz</a>
+        <a href="author.html">Author</a>
+    </nav>
+
+    <h1>The Straw Hat Pirates</h1>
+
+    <div class="filter-container">
+        <button class="filter-btn active" onclick="filterCrew('all')">All</button>
+        <button class="filter-btn" onclick="filterCrew('fighter')">Fighters</button>
+        <button class="filter-btn" onclick="filterCrew('fruit')">Devil Fruit</button>
+        <button class="filter-btn" onclick="filterCrew('support')">Specialists</button>
+    </div>
+
+    <div class="crew-grid">
+
+        <div class="card" data-category="fighter fruit" data-char="luffy" style="animation-delay: 0.1s">
+            <div class="card-inner">
+                <div class="img-wrapper"><img src="images/crew/luffy.png" alt="Luffy"></div>
+                <div class="card-content">
+                    <h2>Luffy</h2>
+                    <div class="role">Captain</div>
+                    <div class="desc">Rubber man with the dream to become Pirate King. Aims to be the freest man on the sea.</div>
+                </div>
+            </div>
+        </div>
+
+        <div class="card" data-category="fighter" data-char="zoro" style="animation-delay: 0.2s">
+            <div class="card-inner">
+                <div class="img-wrapper"><img src="images/crew/zoro.jpg" alt="Zoro"></div>
+                <div class="card-content">
+                    <h2>Zoro</h2>
+                    <div class="role">Swordsman</div>
+                    <div class="desc">Master of Santoryu (Three Sword Style). Aims to become the World's Greatest Swordsman.</div>
+                </div>
+            </div>
+        </div>
+
+        <div class="card" data-category="support" data-char="nami" style="animation-delay: 0.3s">
+            <div class="card-inner">
+                <div class="img-wrapper"><img src="images/crew/nami.jpg" alt="Nami"></div>
+                <div class="card-content">
+                    <h2>Nami</h2>
+                    <div class="role">Navigator</div>
+                    <div class="desc">Expert navigator and thief. Uses the Clima-Tact to manipulate weather. Loves money and tangerines.</div>
+                </div>
+            </div>
+        </div>
+
+        <div class="card" data-category="support" data-char="usopp" style="animation-delay: 0.4s">
+            <div class="card-inner">
+                <div class="img-wrapper"><img src="images/crew/ussop.jpg" alt="Usopp"></div>
+                <div class="card-content">
+                    <h2>Usopp</h2>
+                    <div class="role">Sniper</div>
+                    <div class="desc">A brave warrior of the sea. Uses a slingshot and Pop Greens to fight from a distance.</div>
+                </div>
+            </div>
+        </div>
+
+        <div class="card" data-category="fighter" data-char="sanji" style="animation-delay: 0.5s">
+            <div class="card-inner">
+                <div class="img-wrapper"><img src="images/crew/sanji.webp" alt="Sanji"></div>
+                <div class="card-content">
+                    <h2>Sanji</h2>
+                    <div class="role">Cook</div>
+                    <div class="desc">A chivalrous chef who only fights with his legs. Dreams of finding the All Blue.</div>
+                </div>
+            </div>
+        </div>
+
+        <div class="card" data-category="support fruit" data-char="chopper" style="animation-delay: 0.6s">
+            <div class="card-inner">
+                <div class="img-wrapper"><img src="images/crew/chopper.jpg" alt="Chopper"></div>
+                <div class="card-content">
+                    <h2>Chopper</h2>
+                    <div class="role">Doctor</div>
+                    <div class="desc">A reindeer who ate the Human-Human Fruit. Uses Rumble Balls to change forms.</div>
+                </div>
+            </div>
+        </div>
+
+        <div class="card" data-category="support fruit" data-char="robin" style="animation-delay: 0.7s">
+            <div class="card-inner">
+                <div class="img-wrapper"><img src="images/crew/robin.jpg" alt="Robin"></div>
+                <div class="card-content">
+                    <h2>Nico Robin</h2>
+                    <div class="role">Archaeologist</div>
+                    <div class="desc">The only person who can read Poneglyphs. Uses the Flower-Flower Fruit to sprout limbs.</div>
+                </div>
+            </div>
+        </div>
+
+        <div class="card" data-category="fighter" data-char="franky" style="animation-delay: 0.8s">
+            <div class="card-inner">
+                <div class="img-wrapper"><img src="images/crew/franky.png" alt="Franky"></div>
+                <div class="card-content">
+                    <h2>Franky</h2>
+                    <div class="role">Shipwright</div>
+                    <div class="desc">A SUPER cyborg who built the Thousand Sunny. Runs on cola and pure manliness.</div>
+                </div>
+            </div>
+        </div>
+
+        <div class="card" data-category="fighter fruit" data-char="brook" style="animation-delay: 0.9s">
+            <div class="card-inner">
+                <div class="img-wrapper"><img src="images/crew/brook.jpg" alt="Brook"></div>
+                <div class="card-content">
+                    <h2>Brook</h2>
+                    <div class="role">Musician</div>
+                    <div class="desc">The Soul King. A revived skeleton swordsman who uses ice attacks and music.</div>
+                </div>
+            </div>
+        </div>
+
+        <div class="card" data-category="fighter" data-char="jinbe" style="animation-delay: 1.0s">
+            <div class="card-inner">
+                <div class="img-wrapper"><img src="images/crew/jinbe.jpg" alt="Jinbe"></div>
+                <div class="card-content">
+                    <h2>Jinbe</h2>
+                    <div class="role">Helmsman</div>
+                    <div class="desc">Master of Fish-Man Karate. A former Warlord with immense strength and honor.</div>
+                </div>
+            </div>
+        </div>
+
+    </div>
+
+</div>
+
+<script>
+    function filterCrew(category) {
+        const cards = document.querySelectorAll('.card');
+        const buttons = document.querySelectorAll('.filter-btn');
+
+        buttons.forEach(btn => btn.classList.remove('active'));
+        event.target.classList.add('active');
+
+        cards.forEach(card => {
+            card.style.display = 'none'; 
+            if (category === 'all' || card.dataset.category.includes(category)) {
+                card.style.display = 'block';
+                card.style.animation = 'none';
+                card.offsetHeight; 
+                card.style.animation = 'popIn 0.5s ease-out forwards';
+            }
+        });
+    }
+
+    const cards = document.querySelectorAll('.card');
+
+    cards.forEach(card => {
+        card.addEventListener('mousemove', (e) => {
+            const rect = card.getBoundingClientRect();
+            const x = e.clientX - rect.left;
+            const y = e.clientY - rect.top;
+            
+            const centerX = rect.width / 2;
+            const centerY = rect.height / 2;
+            
+            const rotateX = ((y - centerY) / 10) * -1;
+            const rotateY = (x - centerX) / 10;
+
+            card.style.transform = `perspective(1000px) rotateX(${rotateX}deg) rotateY(${rotateY}deg)`;
+        });
+
+        card.addEventListener('mouseleave', () => {
+            card.style.transform = `perspective(1000px) rotateX(0) rotateY(0)`;
+        });
+    });
+</script>
+<script src="gear5.js"></script>
+</body>
+</html>

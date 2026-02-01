@@ -1,0 +1,56 @@
+body.gear-5-mode {
+    background: radial-gradient(circle, #ffffff 0%, #f0f4f8 100%) !important;
+    color: #333 !important;
+    overflow-x: hidden;
+}
+
+body.gear-5-mode .overlay,
+body.gear-5-mode .author-box,
+body.gear-5-mode .card,
+body.gear-5-mode .ship,
+body.gear-5-mode .member,
+body.gear-5-mode .quiz-box {
+    background: rgba(255, 255, 255, 0.95) !important;
+    color: #2c3e50 !important;
+    border: 3px solid #8E44AD !important;
+    box-shadow: 8px 8px 0px #FFD700 !important;
+    border-radius: 25px !important;
+}
+
+body.gear-5-mode h1, 
+body.gear-5-mode h2,
+body.gear-5-mode a {
+    color: #D32F2F !important;
+    text-shadow: 2px 2px 0px rgba(0,0,0,0.1);
+}
+
+body.gear-5-mode * {
+    transition: all 0.6s cubic-bezier(0.68, -0.55, 0.26, 1.55) !important;
+}
+
+body.gear-5-mode .card, 
+body.gear-5-mode .ship, 
+body.gear-5-mode img {
+    animation: floaty 3s ease-in-out infinite;
+}
+
+body.gear-5-mode .card:hover,
+body.gear-5-mode button:hover,
+body.gear-5-mode img:hover {
+    transform: scale(1.15) rotate(3deg) !important;
+    box-shadow: 12px 12px 0px #8E44AD !important;
+    cursor: url('data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" style="font-size:20px"><text y="18">🍖</text></svg>'), auto; 
+}
+
+@keyframes floaty {
+    0% { transform: translateY(0px) rotate(0deg); }
+    50% { transform: translateY(-10px) rotate(1deg); }
+    100% { transform: translateY(0px) rotate(0deg); }
+}
+
+@keyframes shake {
+    10%, 90% { transform: translate3d(-2px, 0, 0); }
+    20%, 80% { transform: translate3d(4px, 0, 0); }
+    30%, 50%, 70% { transform: translate3d(-6px, 0, 0); }
+    40%, 60% { transform: translate3d(6px, 0, 0); }
+}

@@ -1,0 +1,316 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Log Pose</title>
+    <style>
+        body {
+            margin: 0;
+            font-family: 'Trebuchet MS', sans-serif;
+            background: linear-gradient(to bottom, #87CEEB 0%, #2980b9 50%, #2c3e50 100%);
+            height: 100vh;
+            overflow: hidden;
+            position: relative;
+            transition: background 1s ease;
+        }
+
+        .sky {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 60%;
+            background-image: radial-gradient(white 1px, transparent 1px);
+            background-size: 50px 50px;
+            opacity: 0.3;
+            animation: skyMove 60s linear infinite;
+            z-index: 0;
+        }
+
+        nav {
+            text-align: center;
+            padding: 15px;
+            position: relative;
+            z-index: 100;
+            background: rgba(0,0,0,0.2);
+            backdrop-filter: blur(5px);
+            border-bottom: 2px solid rgba(255, 204, 0, 0.6);
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            gap: 20px;
+        }
+
+        .nav-logo {
+            height: 50px;
+            width: 50px;
+            object-fit: cover;
+            border-radius: 50%;
+            border: 2px solid #ffcc00;
+            transition: transform 0.5s;
+        }
+
+        .nav-logo:hover { transform: rotate(360deg); }
+
+        nav a {
+            color: #ffcc00;
+            text-decoration: none;
+            font-weight: bold;
+            font-size: 16px;
+            text-transform: uppercase;
+            text-shadow: 0 2px 4px rgba(0,0,0,0.5);
+            transition: 0.3s;
+        }
+
+        nav a:hover, nav a.active { 
+            color: #fff; text-shadow: 0 0 10px #ffcc00; 
+        }
+
+        .wave {
+            position: absolute;
+            bottom: 0;
+            left: 0;
+            width: 200%;
+            background-repeat: repeat-x;
+            background-size: 50% 100%;
+            background-position: 0 bottom;
+            transform-origin: center bottom;
+            pointer-events: none;
+        }
+
+        .wave1 {
+            height: 55vh;
+            background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 800 100' xmlns='http://www.w3.org/2000/svg'%3E%3Cpath d='M0 50 Q 200 80 400 50 T 800 50 V 100 H 0 Z' fill='%23001f3f' opacity='0.8'/%3E%3C/svg%3E");
+            animation: scrollWave 20s linear infinite, swell 6s ease-in-out infinite;
+            z-index: 1;
+        }
+
+        .wave2 {
+            height: 45vh;
+            background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 800 100' xmlns='http://www.w3.org/2000/svg'%3E%3Cpath d='M0 60 Q 150 30 300 60 T 600 60 T 900 60 V 100 H 0 Z' fill='%23003366' opacity='0.7'/%3E%3C/svg%3E");
+            animation: scrollWave 15s linear infinite reverse, swell 5s ease-in-out infinite reverse;
+            z-index: 2;
+        }
+
+        .ship-container {
+            position: absolute;
+            bottom: 25%;
+            left: 50%;
+            transform: translateX(-50%);
+            width: 600px;
+            height: 600px;
+            display: flex;
+            justify-content: center;
+            align-items: flex-end;
+            z-index: 5; 
+            pointer-events: none;
+        }
+
+        .wave3 {
+            height: 35vh;
+            background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 800 100' xmlns='http://www.w3.org/2000/svg'%3E%3Cpath d='M0 50 C 150 100 350 0 500 50 T 1000 50 V 100 H 0 Z' fill='%230074D9' opacity='0.9'/%3E%3C/svg%3E");
+            animation: scrollWave 10s linear infinite, swell 4s ease-in-out infinite;
+            z-index: 10;
+        }
+
+        .wave4 {
+            height: 25vh;
+            background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 800 100' xmlns='http://www.w3.org/2000/svg'%3E%3Cpath d='M0 60 Q 100 40 200 60 T 400 60 T 600 60 T 800 60 V 100 H 0 Z' fill='%237FDBFF' opacity='0.4'/%3E%3C/svg%3E");
+            animation: scrollWave 5s linear infinite reverse, swell 3s ease-in-out infinite;
+            z-index: 11;
+        }
+
+        .ship-sprite {
+            max-width: 100%;
+            max-height: 100%;
+            filter: drop-shadow(0 10px 15px rgba(0,0,0,0.5));
+            opacity: 0;
+            transform: translateX(100px) rotate(5deg);
+            transition: all 0.8s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+            display: none;
+        }
+
+        .ship-sprite.active {
+            display: block;
+            opacity: 1;
+            transform: translateX(0) rotate(0deg);
+            animation: bobbing 3s ease-in-out infinite alternate;
+        }
+
+        #ship-sunny.active {
+            animation: bobbingBig 3s ease-in-out infinite alternate;
+        }
+
+        .info-panel {
+            position: absolute;
+            top: 18%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            text-align: center;
+            opacity: 0;
+            transition: all 0.5s ease;
+            z-index: 50;
+            pointer-events: none;
+            width: 80%;
+            max-width: 800px;
+        }
+
+        .info-panel.active { opacity: 1; top: 22%; }
+
+        .info-panel h1 {
+            font-size: 4rem;
+            color: #fff;
+            margin: 0 0 10px 0;
+            text-shadow: 0 5px 15px rgba(0,0,0,0.5);
+            letter-spacing: 3px;
+            text-transform: uppercase;
+        }
+
+        .info-panel p {
+            background: rgba(0,0,0,0.6);
+            color: #fff;
+            padding: 15px 30px;
+            border-radius: 15px;
+            display: inline-block;
+            font-size: 1.1rem;
+            line-height: 1.5;
+            border: 1px solid #ffcc00;
+            box-shadow: 0 5px 15px rgba(0,0,0,0.3);
+            max-width: 600px;
+        }
+
+        .controls {
+            position: absolute;
+            bottom: 40px;
+            width: 100%;
+            text-align: center;
+            z-index: 100;
+            display: flex;
+            justify-content: center;
+            gap: 20px;
+        }
+
+        .ship-btn {
+            background: rgba(0, 0, 0, 0.3);
+            border: 2px solid #ffcc00;
+            color: #ffcc00;
+            padding: 15px 40px;
+            font-size: 1.2rem;
+            font-weight: bold;
+            border-radius: 50px;
+            cursor: pointer;
+            backdrop-filter: blur(5px);
+            transition: 0.3s;
+            text-transform: uppercase;
+        }
+
+        .ship-btn:hover, .ship-btn.active {
+            background: #ffcc00;
+            color: #000;
+            box-shadow: 0 0 25px #ffcc00;
+            transform: translateY(-5px);
+        }
+
+        @keyframes scrollWave {
+            0% { background-position-x: 0; }
+            100% { background-position-x: -1000px; }
+        }
+
+        @keyframes swell {
+            0%, 100% { transform: translateY(0) scaleY(1); }
+            50% { transform: translateY(-15px) scaleY(1.05); }
+        }
+
+        @keyframes skyMove { 0% { background-position: 0 0; } 100% { background-position: 0 100%; } }
+        
+        @keyframes bobbing { 
+            0% { transform: translateY(0px) rotate(1deg); } 
+            100% { transform: translateY(-20px) rotate(-1deg); } 
+        }
+
+        @keyframes bobbingBig { 
+            0% { transform: scale(1.6) translateY(0px) rotate(1deg); } 
+            100% { transform: scale(1.6) translateY(-20px) rotate(-1deg); } 
+        }
+
+        body.gear-5-mode {
+            background: radial-gradient(circle, #ffffff 0%, #dbe6f6 100%) !important;
+        }
+        body.gear-5-mode .wave { filter: hue-rotate(180deg) brightness(1.5); }
+        body.gear-5-mode .ship-btn { 
+            background: #fff !important; color: #8E44AD !important; border-color: #8E44AD !important;
+        }
+        body.gear-5-mode h1 { color: #D32F2F !important; text-shadow: 2px 2px 0px rgba(0,0,0,0.1); }
+        body.gear-5-mode * { transition: all 0.6s cubic-bezier(0.68, -0.55, 0.26, 1.55) !important; }
+    </style>
+</head>
+<body>
+
+<nav>
+    <img src="logo.png" alt="Logo" class="nav-logo">
+    <a href="index.html">Luffy</a>
+    <a href="timeline.html">Timeline</a>
+    <a href="crew.html">Crew</a>
+    <a href="ships.html" class="active">Ships</a>
+    <a href="guide.html">Guide</a>
+    <a href="quiz.html">Quiz</a>
+    <a href="author.html">Author</a>
+</nav>
+
+<div class="sky"></div>
+
+<div class="wave wave1"></div>
+<div class="wave wave2"></div>
+
+<div class="ship-container">
+    <img src="images/merry.png" class="ship-sprite active" id="ship-merry">
+    <img src="images/sunny.png" class="ship-sprite" id="ship-sunny">
+</div>
+
+<div class="wave wave3"></div>
+<div class="wave wave4"></div>
+
+<div class="info-panel active" id="info-merry">
+    <h1>Going Merry</h1>
+    <p>
+        The first ship of the Straw Hat Pirates, a caravel class vessel designed by Merry. 
+        She carried the crew from East Blue all the way to Water 7. More than just a ship, 
+        she was a nakama who developed a Klabautermann (a ship's soul) due to the crew's love.
+    </p>
+</div>
+
+<div class="info-panel" id="info-sunny">
+    <h1>Thousand Sunny</h1>
+    <p>
+        The second ship of the Straw Hats, a brigantine sloop built by Franky using Adam Wood—the strongest 
+        wood in the world. Equipped with the Soldier Dock System and the Coup de Burst, it is the ship 
+        destined to sail across the end of the Grand Line.
+    </p>
+</div>
+
+<div class="controls">
+    <button class="ship-btn active" onclick="setShip('merry')">Going Merry</button>
+    <button class="ship-btn" onclick="setShip('sunny')">Thousand Sunny</button>
+</div>
+
+<script>
+    function setShip(shipId) {
+        document.querySelectorAll('.ship-btn').forEach(btn => btn.classList.remove('active'));
+        event.target.classList.add('active');
+
+        document.querySelectorAll('.ship-sprite').forEach(s => s.classList.remove('active'));
+        document.getElementById('ship-' + shipId).classList.add('active');
+
+        document.querySelectorAll('.info-panel').forEach(i => i.classList.remove('active'));
+        document.getElementById('info-' + shipId).classList.add('active');
+
+        if(shipId === 'sunny') {
+            document.body.style.background = "linear-gradient(to bottom, #f1c40f 0%, #e67e22 50%, #2c3e50 100%)";
+        } else {
+            document.body.style.background = "linear-gradient(to bottom, #87CEEB 0%, #2980b9 50%, #2c3e50 100%)";
+        }
+    }
+</script>
+<script src="gear5.js"></script>
+</body>
+</html>
